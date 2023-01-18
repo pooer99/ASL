@@ -1,20 +1,64 @@
-import os
+import detection_frame as df
+import collection_keypoints as ck
+import cv2
 import numpy as np
+import os
+from matplotlib import pyplot as plt
+import time
 
-# 用于存储训练的姿势的数据
-# 输出数据的地址，nump数组
+# 通过OpenCV收集用于训练的手语的数据
+
+# 收集的手语数据的地址
 DATA_PATH = os.path.join('../HP_Data')
 # 将检测的手语
-actions = np.array(['hello','thanks','iloveyou'])
+actions = np.array(['hello', 'thanks', 'iloveyou'])
 # 训练视频数量
 no_sequences = 30
 # 视频帧数长度
 sequence_length = 30
 
-for action in actions:
-    for sequence in range(no_sequences):
-        try:
-            # 创建文件夹，路径：DATA_PATH/action/sequence
-            os.makedirs(os.path.join(DATA_PATH,action,str(sequence)))
-        except:
-            pass
+cap = cv2.VideoCapture(0)
+# 检测置信度0.5，跟踪置信度0.5
+with df.mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confidence=0.5) as holistic:
+    for action in actions:
+        for sequence in range(no_sequences):
+            for frame_num in range(sequence_length):
+                # ret为bool类型，指示是否成功读取这一帧
+                # 获取摄像头帧
+                ret, frame = cap.read()
+
+                # 对帧进行检测并返回检测结果results
+                image, results = df.mediapipe_detection(frame, holistic)
+
+                # 绘制骨骼结点
+                df.draw_styled_landmarks(image, results)
+
+                # 开始收集
+                if frame_num == 0:
+                    cv2.putText(image, 'STARTING COLLECTION', (120, 200),
+                                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 4, cv2.LINE_AA)
+                    cv2.putText(image, 'Collecting frams for {} video number {}'.format(action, sequence), (15, 12),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+
+                    # 显示在窗口中
+                    cv2.imshow('ASL', image)
+                    cv2.waitKey(2000)
+                else:
+                    cv2.putText(image, 'Collecting frams for {} video number {}'.format(action, sequence), (15, 12),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1, cv2.LINE_AA)
+
+                    # 显示在窗口中
+                    cv2.imshow('ASL', image)
+
+                # 存储收集到的数据
+                key_points = df.extract_keypoints(results)
+                npy_path = os.path.join(DATA_PATH, action, str(sequence), str(frame_num))
+                np.save(npy_path, key_points)
+
+                # 按q退出
+                if action == 'iloveyou' and frame_num == 29:
+                    break
+
+    # 释放
+    cap.release()
+    cv2.destroyAllWindows()

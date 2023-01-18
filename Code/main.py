@@ -35,4 +35,4 @@ with df.mp_holistic.Holistic(min_detection_confidence=0.5,min_tracking_confidenc
 cap.release()
 cv2.destroyAllWindows()
 
-#58.03
+#1.20.15
