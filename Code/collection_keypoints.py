@@ -1,17 +1,15 @@
 import detection_frame as df
-import collection_keypoints as ck
 import cv2
 import numpy as np
 import os
-from matplotlib import pyplot as plt
-import time
+import action_map as am
 
 # 通过OpenCV收集用于训练的手语的数据
 
 # 收集的手语数据的地址
 DATA_PATH = os.path.join('../HP_Data')
 # 将检测的手语
-actions = np.array(['hello', 'thanks', 'iloveyou'])
+actions = am.actions
 # 训练视频数量
 no_sequences = 30
 # 视频帧数长度
@@ -34,6 +32,7 @@ with df.mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confiden
                 df.draw_styled_landmarks(image, results)
 
                 # 开始收集
+                # 在窗口显示提示文字
                 if frame_num == 0:
                     cv2.putText(image, 'STARTING COLLECTION', (120, 200),
                                 cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 4, cv2.LINE_AA)
@@ -55,8 +54,8 @@ with df.mp_holistic.Holistic(min_detection_confidence=0.5, min_tracking_confiden
                 npy_path = os.path.join(DATA_PATH, action, str(sequence), str(frame_num))
                 np.save(npy_path, key_points)
 
-                # 按q退出
-                if action == 'iloveyou' and frame_num == 29:
+                # 退出录制
+                if cv2.waitKey(10) & 0xFF == ord('q'):
                     break
 
     # 释放
