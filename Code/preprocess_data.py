@@ -6,6 +6,8 @@ from tensorflow.keras.utils import to_categorical
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import LSTM, Dense
 from tensorflow.keras.callbacks import TensorBoard
+# 预测
+from sklearn.metrics import multilabel_confusion_matrix, accuracy_score
 import action_map as am
 
 #----------训练数据----------
@@ -35,11 +37,11 @@ for action in am.actions:
         sequences.append(window)
         labels.append(label_map[action])
 
-x = np.array(sequences)
+X = np.array(sequences)
 # 初始化标签
 y = to_categorical(labels).astype(int)
 
-x_train,x_test,y_train,y_test = train_test_split(x,y,test_size=0.05)
+X_train,X_test,y_train,y_test = train_test_split(X,y,test_size=0.05)
 
 
 #----------开始训练
@@ -56,3 +58,34 @@ model.add(LSTM(64, return_sequences=False, activation='relu'))
 model.add(Dense(64,activation='relu'))
 model.add(Dense(32,activation='relu'))
 model.add(Dense(actions.shape[0],activation='softmax'))
+
+model.compile(optimizer='Adam', loss='categorical_crossentropy', metrics=['categorical_accuracy'])
+
+# 查看神经网络结构
+# model.summary()
+
+'''
+# 训练
+model.fit(X_train, y_train, epochs=2000, callbacks=[tb_callback])
+
+#存储训练模型
+model.save('../Model/action.h5')
+
+del model
+'''
+
+# 加载训练模型
+model.load_weights('../Model/action.h5')
+
+'''
+
+# 使用混淆矩阵和准确性进行评估预测
+yhat = model.predict(X_test)
+
+ytrue = np.argmax(y_train, axis=1).tolist()
+yhat = np.argmax(yhat, axis=1).tolist()
+
+print(accuracy_score(ytrue, yhat))
+
+'''
+

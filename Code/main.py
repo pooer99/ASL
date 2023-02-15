@@ -1,11 +1,16 @@
 # 1.导入依赖包
 import detection_frame as df
-import collection_keypoints as ck
 import cv2
 import numpy as np
-import os
-from matplotlib import pyplot as plt
-import time
+from using_model import model
+import action_map as am
+
+# 检测变量
+# 用于存储实时的帧，满30帧后，进行预测
+sequence = []
+sentence = []
+# 阈值
+threshold = 0.4
 
 # OpenCV连接摄像头
 # 参数0-打开笔记本的内置摄像头
@@ -23,7 +28,14 @@ with df.mp_holistic.Holistic(min_detection_confidence=0.5,min_tracking_confidenc
         #绘制骨骼结点
         df.draw_styled_landmarks(image,results)
 
-        # test
+        # 预测
+        keypoints = df.extract_keypoints(results)
+        sequence.append(keypoints)
+        sequence = sequence[-30:]
+
+        if len(sequence) == 30:
+            res = model.predict(np.expand_dims(sequence, axis=0))[0]
+            print(am.actions[np.argmax(res)])
 
         # 显示在窗口中
         cv2.imshow('ASL', image)
@@ -35,4 +47,4 @@ with df.mp_holistic.Holistic(min_detection_confidence=0.5,min_tracking_confidenc
 cap.release()
 cv2.destroyAllWindows()
 
-#1.43.28
+#2.04.06
